@@ -8,7 +8,8 @@ go build
 color-extract test.png > test.html
 ```
 
-open the html file and it should show a breakdown of the image colors
+* open the html file and it should show a breakdown of the image colors
+* sorted by number of pixels from greatest to least
 
 * Currently supports jpg, webp, and png
 * There is an issue with the color codes not displaying correctly all the time
