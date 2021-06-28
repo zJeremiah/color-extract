@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"image"
-	"image/color"
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
@@ -13,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/go-playground/colors"
 	_ "golang.org/x/image/webp"
 )
 
@@ -30,48 +30,7 @@ type Stats struct {
 	Percent float64
 }
 
-type Hex string
-
-func hexModel(c color.Color) color.Color {
-	if _, ok := c.(Hex); ok {
-		return c
-	}
-	r, g, b, _ := c.RGBA()
-	return RGBToHex(uint8(r>>8), uint8(g>>8), uint8(b>>8))
-}
-
-// HexToRGB converts an Hex string to a RGB triple.
-func HexToRGB(h Hex) (uint8, uint8, uint8) {
-	if len(h) > 0 && h[0] == '#' {
-		h = h[1:]
-	}
-	if len(h) == 3 {
-		h = h[:1] + h[:1] + h[1:2] + h[1:2] + h[2:] + h[2:]
-	}
-	if len(h) == 6 {
-		if rgb, err := strconv.ParseUint(string(h), 16, 32); err == nil {
-			return uint8(rgb >> 16), uint8((rgb >> 8) & 0xFF), uint8(rgb & 0xFF)
-		}
-	}
-	return 0, 0, 0
-}
-
-// RGBA returns the alpha-premultiplied red, green, blue and alpha values
-// for the Hex.
-func (c Hex) RGBA() (uint32, uint32, uint32, uint32) {
-	r, g, b := HexToRGB(c)
-	return uint32(r) * 0x101, uint32(g) * 0x101, uint32(b) * 0x101, 0xffff
-}
-
-// RGBToHex converts an RGB triple to an Hex string.
-func RGBToHex(r, g, b uint8) Hex {
-	return Hex(fmt.Sprintf("#%X%X%X", r, g, b))
-}
-
-var HexModel = color.ModelFunc(hexModel)
-
 func main() {
-
 	htmlHeader := []byte(`<!DOCTYPE html>
 <html>
 <head>
@@ -79,7 +38,6 @@ func main() {
   td, th {
 	border: 1px solid #ddd;
 	padding: 9px;
-	width: 15%
   }
   
   tr:nth-child(even){background-color: #f2f2f2;}
@@ -100,37 +58,42 @@ func main() {
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
-<div style="">
+<div>
 `)
 
-	htmlPixels := (`<div><img src="%s"></div>
+	htmlPixels := `<div><img src="%s"></div>
 <div style='font-size: larger;margin:20px'>pixels: %d size (%d x %d) Colors: %d</div>
-`)
+`
 	htmlTable := []byte(`
 	<table class="table" style="width:70%;">
-<thead>
-  <tr><th>Color</th><th>Pixel Count</th><th>Color Code</th><th>RGB</th><th>Percentage</th></tr>
-</thead>
+<thead><tr>
+  <th style="width:5%">Number</th>
+  <th style="width:25%">Color</th>
+  <th>Pixel Count</th>
+  <th>Color Code</th>
+  <th>RGB</th>
+  <th>Percentage</th>
+</tr></thead>
 <tbody>
 `)
 
-	htmlColors := (`
+	htmlColors := `
   <tr>
-    <td style="background-color:rgb(%d,%d,%d);"></td>
+    <td style="text-align:center">%d</td>
+    <td style="background-color:%s;"></td>
 	<td>%d</td>
 	<td>%s</td>
-	<td>rgb(%d, %d, %d)</td>
-	<td>%f%%</td>
+	<td>%s</td>
+	<td>%.2f%%</td>
   </tr>
-`)
+`
 
 	flag.Parse()
 	input := flag.Arg(0)
-
+	row := flag.Arg(1)
+	rowNum, _ := strconv.Atoi(row)
 	colorCount := make(map[Pixel]int)
 	imgName := input
-
-	fmt.Println("[", imgName, "]")
 
 	reader, err := os.Open(imgName)
 	if err != nil {
@@ -142,12 +105,18 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// loops though all the pixels to get the color of each one
+	// and to count each of the colors found
 	bounds := m.Bounds()
-
+	outputRow := make([]Pixel, 0)
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, a := m.At(x, y).RGBA()
 			p := rgbaToPixel(r, g, b, a)
+
+			if row != "" && y == rowNum {
+				outputRow = append(outputRow, p)
+			}
 
 			colorCount[p]++
 		}
@@ -156,11 +125,17 @@ func main() {
 	buf := bytes.NewBuffer(htmlHeader)
 
 	total := bounds.Max.X * bounds.Max.Y
-	buf.Write([]byte(fmt.Sprintf(htmlPixels, imgName, total, bounds.Max.X, bounds.Max.Y, len(colorCount))))
+	buf.Write([]byte(
+		fmt.Sprintf(htmlPixels,
+			imgName,
+			total,
+			bounds.Max.X,
+			bounds.Max.Y,
+			len(colorCount)),
+	))
 
 	list := make([]Stats, 0)
 	for k, v := range colorCount {
-
 		list = append(list, Stats{
 			Pixel:   k,
 			Count:   v,
@@ -170,21 +145,47 @@ func main() {
 
 	buf.Write(htmlTable)
 
+	//sort the list by number of pixels
 	sort.SliceStable(list, func(i, j int) bool {
 		return list[i].Count > list[j].Count
 	})
 
-	for _, l := range list {
-		buf.Write([]byte(fmt.Sprintf(htmlColors,
-			l.R, l.G, l.B, l.Count,
-			RGBToHex(uint8(l.R), uint8(l.G), uint8(l.B)),
-			l.R, l.G, l.B,
-			l.Percent,
-		)))
+	// loop though the stats list and build a html table row for each item
+	for i, l := range list {
+		rgb := fmt.Sprintf("rgb(%d,%d,%d)", l.R, l.G, l.B)
+		color, err := colors.Parse(rgb)
+		if err != nil {
+			log.Println("could not parse color", rgb)
+		}
+		s := fmt.Sprintf(htmlColors,
+			i,
+			rgb,
+			l.Count,
+			color.ToHEX(),
+			rgb,
+			l.Percent)
+
+		buf.Write([]byte(s))
 	}
 
-	buf.Write([]byte("</tbody></table></div></body>\n</html>\n"))
+	buf.Write([]byte("</tbody>\n</table>\n"))
 
+	// Added a 2nd Arg to allow the printing of a list of the colors (by number)
+	// in a selected row
+	if len(outputRow) > 0 {
+		buf.Write([]byte("<br><hr><div>Row:" + row + " Output Colors</div>\n<div>\n"))
+		for _, v := range outputRow {
+			for i, b := range list {
+				if b.Pixel == v {
+					buf.Write([]byte(fmt.Sprintf("%d, ", i)))
+					break
+				}
+			}
+		}
+		buf.Write([]byte("</div>\n"))
+	}
+
+	buf.Write([]byte("</div>\n</body>\n</html>\n"))
 	fmt.Print(buf.String())
 }
 

@@ -1,0 +1,8 @@
+*.png
+*.webp
+*.jpg
+*.psd
+*.html
+
+color-extract.exe
+color-extract
