@@ -20,8 +20,9 @@ type Rect struct {
 }
 
 type Grid struct {
-	Name  string
-	Codes map[Point]Position
+	Name         string
+	Codes        map[Point]Position
+	ToManyColors bool
 }
 
 type Position struct {

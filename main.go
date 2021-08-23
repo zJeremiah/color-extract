@@ -144,7 +144,7 @@ func main() {
 			sizeStr(bounds.Max)),
 	))
 
-	colorList := []string{"Σ", "0", "∆", "1", "#", "2", "3", "4", "5", "6", "7", "8", "9", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "U", "V", "W", "X", "Y", "Z", "@", "$"}
+	colorList := []string{"Σ", "0", "∆", "1", "#", "2", "3", "4", "5", "6", "7", "8", "9", "C", "D", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "U", "V", "W", "X", "Y", "Z", "@", "$", "*"}
 	list := make([]Stats, 0)
 
 	i := 0
@@ -237,6 +237,7 @@ func main() {
 		c.Close()
 	} else {
 		log.Println("to many colors to create pattern", len(list), "limit", len(colorList))
+		os.Exit(1)
 	}
 
 	newImageGrid(bounds.Max.X*30, bounds.Max.Y*30, grid)
