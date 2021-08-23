@@ -144,7 +144,7 @@ func main() {
 			sizeStr(bounds.Max)),
 	))
 
-	colorList := []string{"Σ", "∆", "@", "#", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "U", "V", "W", "X", "Y", "Z"}
+	colorList := []string{"Σ", "0", "∆", "1", "#", "2", "3", "4", "5", "6", "7", "8", "9", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "U", "V", "W", "X", "Y", "Z", "@", "$"}
 	list := make([]Stats, 0)
 
 	i := 0
@@ -253,7 +253,7 @@ func sizeStr(p image.Point) string {
 	inX := float64(mmX) / 25.4
 	inY := float64(mmY) / 25.4
 
-	return fmt.Sprintf("size in 2mm (%d x %d) size in inches (%.2f, %.2f)", mmX, mmY, inX, inY)
+	return fmt.Sprintf("size  (%dmm x %dmm)  (%.2fin, %.2fin)", mmX, mmY, inX, inY)
 }
 
 func base64PNG(imgPath string) string {
