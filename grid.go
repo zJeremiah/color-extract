@@ -41,7 +41,7 @@ func newImageGrid(width, height int, grid Grid) {
 	if err != nil {
 		log.Fatalln("error setting font face", err.Error())
 	}
-	clr := color.RGBA{150, 150, 150, 255}
+	clr := color.RGBA{120, 120, 120, 255}
 	img.SetColor(clr)
 	img.SetStrokeStyle(gg.NewSolidPattern(clr))
 
@@ -85,12 +85,12 @@ func newImageGrid(width, height int, grid Grid) {
 			img.Stroke()
 		}
 
-		// below :=  image.Point{X:p.X,Y:p.Y+1}
-		// left :=  image.Point{X:p.X-1,Y:p.Y}
-		// right :=  image.Point{X:p.X+1,Y:p.Y}
 		x++
-
 	}
+
+	// draw a rectangle around the whole grid
+	img.DrawRectangle(0, 0, float64(width), float64(height))
+	img.Stroke()
 
 	err = img.SavePNG(grid.Name + ".grid.png")
 	if err != nil {
