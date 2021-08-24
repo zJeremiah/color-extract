@@ -61,6 +61,10 @@ func main() {
 	color: white;
   }
 
+	img {
+		width: 500px;
+	}
+
   </style>
   <meta http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -100,6 +104,11 @@ func main() {
 
 	flag.Parse()
 	input := flag.Arg(0)
+	multiple, _ := strconv.ParseFloat(flag.Arg(1), 64)
+	if multiple == 0 {
+		multiple = 1
+	}
+
 	colorCount := make(map[Pixel]int)
 	imgName := input
 
@@ -216,6 +225,8 @@ func main() {
 	grid := Grid{
 		Codes: make(map[Point]Position),
 		Name:  names[0],
+		MaxX:  float64(bounds.Max.X),
+		MaxY:  float64(bounds.Max.Y),
 	}
 
 	os.Remove("pattern.csv")
@@ -227,7 +238,7 @@ func main() {
 				for _, s := range list {
 					if s.Pixel == x {
 						c.Write([]byte(s.ID))
-						grid.Set(ix, iy, s.ID)
+						grid.Set(multiple, ix, iy, s.ID)
 						break
 					}
 				}
